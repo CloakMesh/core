@@ -18,11 +18,11 @@ services:
     hostname: ${CLOAKMESH_HOST:-cloakmesh-controller}
     restart: unless-stopped
     ports:
-      - "1280:1280"
+      - "${CLOAKMESH_CTRL_PORT:-1280}:${CLOAKMESH_CTRL_PORT:-1280}"
     environment:
       CLOAKMESH_HOME: /cloakmesh-controller
       CLOAKMESH_CTRL_ADVERTISED_ADDRESS: ${CLOAKMESH_HOST:-cloakmesh-controller}
-      CLOAKMESH_CTRL_ADVERTISED_PORT: "1280"
+      CLOAKMESH_CTRL_ADVERTISED_PORT: "${CLOAKMESH_CTRL_PORT:-1280}"
       CLOAKMESH_BOOTSTRAP: "true"
       # 注意：此项在上游语义里决定「是否生成 root+intermediate PKI」，
       # 首个控制器必须为 true（不是 HA 集群成员开关；HA 成员用 CLUSTER_NODE_PKI）
@@ -40,7 +40,7 @@ services:
     volumes:
       - controller-data:/cloakmesh-controller
     healthcheck:
-      test: ["CMD", "curl", "-kfsS", "https://127.0.0.1:1280/edge/client/v1/version"]
+      test: ["CMD", "curl", "-kfsS", "https://127.0.0.1:${CLOAKMESH_CTRL_PORT:-1280}/edge/client/v1/version"]
       interval: 5s
       timeout: 5s
       retries: 24
@@ -62,7 +62,7 @@ services:
     environment:
       CLOAKMESH_HOME: /cloakmesh-router
       CLOAKMESH_CTRL_ADVERTISED_ADDRESS: ${CLOAKMESH_HOST:-cloakmesh-controller}
-      CLOAKMESH_CTRL_ADVERTISED_PORT: "1280"
+      CLOAKMESH_CTRL_ADVERTISED_PORT: "${CLOAKMESH_CTRL_PORT:-1280}"
       CLOAKMESH_ROUTER_NAME: ${CLOAKMESH_ROUTER_NAME:-router-1}
       CLOAKMESH_ROUTER_TYPE: edge
       CLOAKMESH_ROUTER_PORT: "${CLOAKMESH_ROUTER_PORT:-3022}"

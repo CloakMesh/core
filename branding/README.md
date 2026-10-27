@@ -63,8 +63,13 @@ docker build -f branding/docker/Dockerfile.router     -t cloakmesh/router:local 
 ```bash
 ./deploy/linux/install.sh                                   # 一键：controller + router
 ./deploy/linux/install.sh --console /path/to/cloakmesh-console   # 追加中文控制台
+./deploy/linux/install.sh --ctrl-port 8443 --router-port 443     # 自定义端口
+./deploy/linux/install.sh --reconfigure --router-port 443        # 已部署环境改端口
 ./deploy/linux/install.sh --uninstall
 ```
+
+端口机制（端口落在哪几处、`--reconfigure` 做了什么、实测结果、故障对照）见
+[`deploy/linux/README.md`](../deploy/linux/README.md)。
 
 裸机（非容器）systemd 部署请参考 `branding/systemd/` 下的两个单元文件，配套目录约定：
 

@@ -31,7 +31,19 @@ cd cloakmesh-core
 # 同时部署中文控制台
 git clone https://github.com/aiuc-labs/cloakmesh-console.git ../cloakmesh-console
 ./deploy/linux/install.sh --console ../cloakmesh-console
+
+# 自定义端口（控制面 / 数据面 / 控制台）
+./deploy/linux/install.sh --ctrl-port 8443 --router-port 443 --console-port 8080
 ```
+
+已部署环境改端口不需要重建数据库、不需要重签证书、不需要重新登记路由器：
+
+```bash
+./deploy/linux/install.sh --reconfigure --router-port 443
+./deploy/linux/install.sh --reconfigure --ctrl-port 8443
+```
+
+端口存在哪几处、为什么不能只改一处、故障对照，见 [`deploy/linux/README.md`](deploy/linux/README.md)。
 
 脚本会自动生成随机管理员密码、构建镜像、等待健康检查，并在结束时打印访问地址与凭据（凭据同时写入 `deploy/linux/.env`，权限 600）。
 
