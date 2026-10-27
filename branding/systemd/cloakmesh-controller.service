@@ -1,0 +1,33 @@
+[Unit]
+Description=CloakMesh Controller
+Documentation=https://github.com/aiuc-labs/cloakmesh-core
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User=cloakmesh
+Group=cloakmesh
+
+# 服务配置（含 bootstrap 开关）。文件内使用 CLOAKMESH_* 前缀，
+# 由 ExecStartPre 的 env.sh 映射为上游运行时读取的 ZITI_*。
+EnvironmentFile=/opt/cloakmesh/etc/controller/cloakmesh.env
+
+StateDirectory=cloakmesh-controller
+WorkingDirectory=/var/lib/cloakmesh-controller
+ReadOnlyPaths=-/opt/cloakmesh/share/console
+
+# -- 环境变量桥接：CLOAKMESH_* → ZITI_*
+ExecStartPre=/bin/bash -c '. /opt/cloakmesh/share/env.sh'
+ExecStart=/usr/local/bin/cloakmesh controller run config.yml $CLOAKMESH_ARGS
+Environment=ZITI_HOME=/var/lib/cloakmesh-controller
+
+Restart=always
+RestartSec=3
+
+LimitNOFILE=65535
+UMask=0007
+
+[Install]
+WantedBy=multi-user.target

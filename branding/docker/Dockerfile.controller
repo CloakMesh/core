@@ -1,0 +1,76 @@
+# syntax=docker/dockerfile:1
+#
+# CloakMesh Controller 镜像
+#
+# 与上游 openziti/ziti-controller 的差异（仅品牌层）：
+#   1. 二进制名：ziti → cloakmesh（并保留 /usr/bin/ziti 软链供上游脚本内部调用）
+#   2. 环境变量前缀：CLOAKMESH_*，入口处映射为 ZITI_*
+#   3. 运行用户/组：cloakmesh（uid/gid 2171，沿用上游数值以避免卷权限问题）
+#   4. 文件系统内部路径沿用上游 /ziti-controller，避免破坏 bootstrap.bash 逻辑
+#
+# 构建（仓库根目录）：
+#   docker build -f branding/docker/Dockerfile.controller -t cloakmesh/controller:local .
+
+ARG GO_IMAGE=golang:1.27-bookworm
+ARG RUNTIME_IMAGE=debian:bookworm-slim
+
+FROM ${GO_IMAGE} AS builder
+WORKDIR /src
+ENV CGO_ENABLED=1
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -trimpath -ldflags "-s -w" -o /out/cloakmesh ./ziti
+
+FROM ${RUNTIME_IMAGE}
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates curl util-linux iptables iproute2 tzdata \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd -g 2171 cloakmesh \
+ && useradd -u 2171 -g 2171 -m -s /sbin/nologin cloakmesh \
+ && mkdir -p /opt/cloakmesh/share /opt/cloakmesh/share/console /cloakmesh-controller \
+ && chown -R cloakmesh:cloakmesh /cloakmesh-controller /opt/cloakmesh
+
+COPY --from=builder /out/cloakmesh /usr/local/bin/cloakmesh
+RUN ln -sf /usr/local/bin/cloakmesh /usr/bin/ziti \
+ && ln -sf /usr/local/bin/cloakmesh /usr/local/bin/ziti
+
+# 上游 bootstrap / entrypoint 原样复用，保证与官方镜像行为一致
+COPY dist/dist-packages/linux/openziti-controller/bootstrap.bash /bootstrap.bash
+COPY dist/dist-packages/linux/openziti-controller/entrypoint.bash /entrypoint.bash
+COPY branding/env.sh /opt/cloakmesh/share/env.sh
+COPY branding/docker/entrypoint.sh /cloakmesh-entrypoint.sh
+RUN chmod +x /bootstrap.bash /entrypoint.bash /cloakmesh-entrypoint.sh /opt/cloakmesh/share/env.sh
+
+ENV CLOAKMESH_HOME=/cloakmesh-controller \
+    ZITI_HOME=/cloakmesh-controller \
+    ZITI_CTRL_BOOTSTRAP_BASH=/bootstrap.bash \
+    ZITI_CONSOLE_LOCATION=/opt/cloakmesh/share/console \
+    ZITI_TIME_FORMAT=utc \
+    ZITI_BOOTSTRAP=true \
+    ZITI_BOOTSTRAP_PKI=true \
+    ZITI_BOOTSTRAP_CONFIG=true \
+    ZITI_BOOTSTRAP_DATABASE=true \
+    ZITI_BOOTSTRAP_CONSOLE=true \
+    ZITI_PKI_ROOT=pki \
+    ZITI_CA_FILE=root \
+    ZITI_INTERMEDIATE_FILE=intermediate \
+    ZITI_SERVER_FILE=server \
+    ZITI_CLIENT_FILE=client \
+    ZITI_NETWORK_NAME=ctrl \
+    ZITI_AUTO_RENEW_CERTS=true \
+    ZITI_CTRL_ADVERTISED_PORT=1280 \
+    ZITI_USER=admin
+
+LABEL org.opencontainers.image.title="CloakMesh Controller" \
+      org.opencontainers.image.description="CloakMesh zero-trust controller (based on OpenZiti, Apache-2.0)" \
+      org.opencontainers.image.source="https://github.com/aiuc-labs/cloakmesh-core" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+WORKDIR /cloakmesh-controller
+USER cloakmesh
+
+EXPOSE 1280
+ENTRYPOINT ["/cloakmesh-entrypoint.sh"]

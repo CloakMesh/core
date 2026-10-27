@@ -1,0 +1,87 @@
+name: cloakmesh
+
+# CloakMesh 单机环境（controller + edge router + 中文控制台）
+#
+# 变量来源：同目录 .env（由 install.sh 生成）
+#   CLOAKMESH_HOST            对外访问地址（证书 SAN），默认本机 IP
+#   CLOAKMESH_PWD             管理员初始密码
+#   CLOAKMESH_ROUTER_NAME     路由器名称
+#   CLOAKMESH_CONSOLE_IMAGE   控制台镜像（可选，缺省则不起控制台）
+
+services:
+  controller:
+    image: ${CLOAKMESH_CONTROLLER_IMAGE:-cloakmesh/controller:local}
+    build:
+      context: ../..
+      dockerfile: branding/docker/Dockerfile.controller
+    container_name: cloakmesh-controller
+    hostname: ${CLOAKMESH_HOST:-cloakmesh-controller}
+    restart: unless-stopped
+    ports:
+      - "1280:1280"
+    environment:
+      CLOAKMESH_HOME: /cloakmesh-controller
+      CLOAKMESH_CTRL_ADVERTISED_ADDRESS: ${CLOAKMESH_HOST:-cloakmesh-controller}
+      CLOAKMESH_CTRL_ADVERTISED_PORT: "1280"
+      CLOAKMESH_BOOTSTRAP: "true"
+      CLOAKMESH_BOOTSTRAP_PKI: "true"
+      CLOAKMESH_BOOTSTRAP_CONFIG: "true"
+      CLOAKMESH_BOOTSTRAP_DATABASE: "true"
+      CLOAKMESH_AUTO_RENEW_CERTS: "true"
+      CLOAKMESH_PWD: ${CLOAKMESH_PWD:?CLOAKMESH_PWD 未设置}
+      CLOAKMESH_USER: ${CLOAKMESH_USER:-admin}
+    volumes:
+      - controller-data:/cloakmesh-controller
+    healthcheck:
+      test: ["CMD", "curl", "-kfsS", "https://127.0.0.1:1280/edge/client/v1/version"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
+
+  router:
+    image: ${CLOAKMESH_ROUTER_IMAGE:-cloakmesh/router:local}
+    build:
+      context: ../..
+      dockerfile: branding/docker/Dockerfile.router
+    container_name: cloakmesh-router
+    hostname: ${CLOAKMESH_ROUTER_NAME:-router-1}
+    restart: unless-stopped
+    depends_on:
+      controller:
+        condition: service_healthy
+    ports:
+      - "3022:3022"
+    environment:
+      CLOAKMESH_HOME: /cloakmesh-router
+      CLOAKMESH_CTRL_ADVERTISED_ADDRESS: ${CLOAKMESH_HOST:-cloakmesh-controller}
+      CLOAKMESH_CTRL_ADVERTISED_PORT: "1280"
+      CLOAKMESH_ROUTER_NAME: ${CLOAKMESH_ROUTER_NAME:-router-1}
+      CLOAKMESH_ROUTER_TYPE: edge
+      CLOAKMESH_ROUTER_PORT: "3022"
+      CLOAKMESH_ROUTER_ADVERTISED_ADDRESS: ${CLOAKMESH_ROUTER_HOST:-${CLOAKMESH_HOST:-cloakmesh-controller}}
+      CLOAKMESH_BOOTSTRAP: "true"
+      CLOAKMESH_BOOTSTRAP_CONFIG: "true"
+      CLOAKMESH_BOOTSTRAP_ENROLLMENT: "true"
+      CLOAKMESH_AUTO_RENEW_CERTS: "true"
+      CLOAKMESH_PWD: ${CLOAKMESH_PWD:?CLOAKMESH_PWD 未设置}
+    volumes:
+      - router-data:/cloakmesh-router
+
+  console:
+    image: ${CLOAKMESH_CONSOLE_IMAGE:-cloakmesh/console:local}
+    container_name: cloakmesh-console
+    restart: unless-stopped
+    depends_on:
+      controller:
+        condition: service_healthy
+    ports:
+      - "${CLOAKMESH_CONSOLE_PORT:-8080}:80"
+    volumes:
+      - ${CLOAKMESH_CONSOLE_DIST:-./console-dist}:/usr/share/nginx/html:ro
+    profiles:
+      - console
+
+volumes:
+  controller-data:
+  router-data:

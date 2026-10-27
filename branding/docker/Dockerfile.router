@@ -1,0 +1,67 @@
+# syntax=docker/dockerfile:1
+#
+# CloakMesh Router（转发端点）镜像
+#
+# 与上游 openziti/ziti-router 的差异（仅品牌层）：
+#   1. 二进制名 ziti → cloakmesh（保留 ziti 软链）
+#   2. 环境变量前缀 CLOAKMESH_*，入口映射为 ZITI_*
+#   3. 运行用户 cloakmesh（uid/gid 2171）
+#
+# 构建（仓库根目录）：
+#   docker build -f branding/docker/Dockerfile.router -t cloakmesh/router:local .
+
+ARG GO_IMAGE=golang:1.27-bookworm
+ARG RUNTIME_IMAGE=debian:bookworm-slim
+
+FROM ${GO_IMAGE} AS builder
+WORKDIR /src
+ENV CGO_ENABLED=1
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -trimpath -ldflags "-s -w" -o /out/cloakmesh ./ziti
+
+FROM ${RUNTIME_IMAGE}
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates curl util-linux iptables iproute2 tzdata \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd -g 2171 cloakmesh \
+ && useradd -u 2171 -g 2171 -m -s /sbin/nologin cloakmesh \
+ && mkdir -p /opt/cloakmesh/share /cloakmesh-router \
+ && chown -R cloakmesh:cloakmesh /cloakmesh-router /opt/cloakmesh
+
+COPY --from=builder /out/cloakmesh /usr/local/bin/cloakmesh
+RUN ln -sf /usr/local/bin/cloakmesh /usr/bin/ziti \
+ && ln -sf /usr/local/bin/cloakmesh /usr/local/bin/ziti
+
+COPY dist/dist-packages/linux/openziti-router/bootstrap.bash /bootstrap.bash
+COPY dist/dist-packages/linux/openziti-router/entrypoint.bash /entrypoint.bash
+COPY branding/env.sh /opt/cloakmesh/share/env.sh
+COPY branding/docker/entrypoint.sh /cloakmesh-entrypoint.sh
+RUN chmod +x /bootstrap.bash /entrypoint.bash /cloakmesh-entrypoint.sh /opt/cloakmesh/share/env.sh
+
+ENV CLOAKMESH_HOME=/cloakmesh-router \
+    ZITI_HOME=/cloakmesh-router \
+    ZITI_ROUTER_BOOTSTRAP_BASH=/bootstrap.bash \
+    ZITI_TIME_FORMAT=utc \
+    ZITI_BOOTSTRAP=true \
+    ZITI_BOOTSTRAP_CONFIG=true \
+    ZITI_BOOTSTRAP_ENROLLMENT=true \
+    ZITI_ROUTER_NAME=router \
+    ZITI_ROUTER_TYPE=edge \
+    ZITI_ROUTER_PORT=3022 \
+    ZITI_ROUTER_MODE=host \
+    ZITI_AUTO_RENEW_CERTS=true
+
+LABEL org.opencontainers.image.title="CloakMesh Router" \
+      org.opencontainers.image.description="CloakMesh zero-trust edge router (based on OpenZiti, Apache-2.0)" \
+      org.opencontainers.image.source="https://github.com/aiuc-labs/cloakmesh-core" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+WORKDIR /cloakmesh-router
+USER cloakmesh
+
+EXPOSE 3022
+ENTRYPOINT ["/cloakmesh-entrypoint.sh"]

@@ -1,0 +1,31 @@
+[Unit]
+Description=CloakMesh Router
+Documentation=https://github.com/aiuc-labs/cloakmesh-core
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User=cloakmesh
+Group=cloakmesh
+
+# 服务配置（含 bootstrap / enrollment 开关），使用 CLOAKMESH_* 前缀
+EnvironmentFile=/opt/cloakmesh/etc/router/cloakmesh.env
+
+StateDirectory=cloakmesh-router
+WorkingDirectory=/var/lib/cloakmesh-router
+
+# -- 环境变量桥接：CLOAKMESH_* → ZITI_*
+ExecStartPre=/bin/bash -c '. /opt/cloakmesh/share/env.sh'
+ExecStart=/usr/local/bin/cloakmesh router run config.yml $CLOAKMESH_ARGS
+Environment=ZITI_HOME=/var/lib/cloakmesh-router
+
+Restart=always
+RestartSec=3
+
+LimitNOFILE=65535
+UMask=0007
+
+[Install]
+WantedBy=multi-user.target
