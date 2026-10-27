@@ -77,6 +77,29 @@ docker build -f branding/docker/Dockerfile.router     -t cloakmesh/router:local 
 /var/lib/cloakmesh-router
 ```
 
-## 6. 上游归属
+## 7. 实测记录（Debian 13 / Docker 26.1.5 / 2C4G）
+
+`./deploy/linux/install.sh --host <本机IP> --console <cloakmesh-console 路径>` 全流程跑通：
+
+| 检查项 | 结果 |
+|---|---|
+| `cloakmesh/controller:local` 镜像 | 206 MB，`cloakmesh version` 可执行 |
+| `cloakmesh/router:local` 镜像 | 206 MB（复用 builder 缓存） |
+| `cloakmesh/console:local` 镜像 | 96 MB |
+| 控制器 | `healthy`，edge API `HTTP 200`，日志出现 `cluster initialized successfully` |
+| 路由器 | `ziti edge list edge-routers` → `online=True` |
+| 中文控制台 | `HTTP 200`，`<title>CloakMesh 管理控制台</title>` |
+
+### 踩过的坑（已修，改动都在本目录）
+
+1. **`ARG` 作用域**：写在首个 `FROM` 之前的 `ARG` 不会进入 stage，`${DEBIAN_MIRROR}` 在 `RUN` 里展开为空，`sed` 把 apt 源域名替换成空串 → 必须在 stage 内重新声明。
+2. **`ZITI_BOOTSTRAP_CLUSTER` 的真实语义**：不是「HA 集群成员」，而是「是否生成 root+intermediate PKI」。首个控制器设为 `false` 会导致 CA 不生成，后续创建证书必然失败；HA 成员用的是 `ZITI_CLUSTER_NODE_PKI`。
+3. **`set -u` 崩溃**：上游脚本要求 `ZITI_BOOTSTRAP_CLUSTER` 等变量存在，容器入口需补齐默认值。
+4. **含空格的变量值**：上游 `exportZitiVars()` 用 `export "${line%=*}"` 处理 `set` 输出，`ZITI_USER_NAME="Default Admin"` 这类含空格的值会报 `not a valid identifier`。
+5. **路由器证书 SAN**：`create config router` 生成的 `csr.sans` 只有 `hostname/localhost/127.0.0.1`。公布地址是 IP 时必须补 `ip` 类型 SAN，否则 router 启动 `fatal: identity is not valid for provided host`。
+6. **`compose exec` 不继承 entrypoint 的 env 映射**：容器内新进程看不到 entrypoint 里 `CLOAKMESH_*→ZITI_*` 的结果，脚本里要用 `CLOAKMESH_*`。
+7. **compose 嵌套默认值**：`${A:-${B}}` 解析不可靠，会让变量静默丢失 → 用单层默认值。
+
+## 8. 上游归属（原第 6 节）
 
 本项目基于 [OpenZiti](https://github.com/openziti/ziti)（Apache License 2.0）修改，保留上游全部版权与许可声明。上游文档中的 `ZITI_*` 变量、`ziti` 命令与本文档的 `CLOAKMESH_*`、`cloakmesh` 命令一一对应，可直接对照阅读：https://openziti.io/docs/
