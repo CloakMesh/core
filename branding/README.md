@@ -77,7 +77,7 @@ docker build -f branding/docker/Dockerfile.router     -t cloakmesh/router:local 
 /var/lib/cloakmesh-router
 ```
 
-## 7. 实测记录（Debian 13 / Docker 26.1.5 / 2C4G）
+## 6. 实测记录（Debian 13 / Docker 26.1.5 / 2C4G）
 
 `./deploy/linux/install.sh --host <本机IP> --console <cloakmesh-console 路径>` 全流程跑通：
 
@@ -100,6 +100,6 @@ docker build -f branding/docker/Dockerfile.router     -t cloakmesh/router:local 
 6. **`compose exec` 不继承 entrypoint 的 env 映射**：容器内新进程看不到 entrypoint 里 `CLOAKMESH_*→ZITI_*` 的结果，脚本里要用 `CLOAKMESH_*`。
 7. **compose 嵌套默认值**：`${A:-${B}}` 解析不可靠，会让变量静默丢失 → 用单层默认值。
 
-## 8. 上游归属（原第 6 节）
+## 7. 上游归属
 
 本项目基于 [OpenZiti](https://github.com/openziti/ziti)（Apache License 2.0）修改，保留上游全部版权与许可声明。上游文档中的 `ZITI_*` 变量、`ziti` 命令与本文档的 `CLOAKMESH_*`、`cloakmesh` 命令一一对应，可直接对照阅读：https://openziti.io/docs/
