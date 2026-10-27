@@ -16,6 +16,7 @@
 #   ./deploy/linux/install.sh --console /path/cloakmesh-console   # 同时部署中文控制台
 #   ./deploy/linux/install.sh --pwd 'MyPassw0rd!'      # 指定管理员密码
 #   ./deploy/linux/install.sh --no-build               # 复用已构建镜像
+#   ./deploy/linux/install.sh --router-port 443        # 改路由器数据面端口（默认 3022）
 #
 # 卸载：
 #   ./deploy/linux/install.sh --uninstall
@@ -29,6 +30,7 @@ CONSOLE_DIR=""
 CLOAKMESH_HOST=""
 CLOAKMESH_PWD=""
 ROUTER_NAME="router-1"
+ROUTER_PORT="3022"
 CONSOLE_PORT="8080"
 UNINSTALL="false"
 NO_BUILD="false"
@@ -42,6 +44,7 @@ while [ "$#" -gt 0 ]; do
         --host)         CLOAKMESH_HOST="${2:?}"; shift 2 ;;
         --pwd)          CLOAKMESH_PWD="${2:?}"; shift 2 ;;
         --router-name)  ROUTER_NAME="${2:?}"; shift 2 ;;
+        --router-port)  ROUTER_PORT="${2:?}"; shift 2 ;;
         --console)      CONSOLE_DIR="${2:?}"; shift 2 ;;
         --console-port) CONSOLE_PORT="${2:?}"; shift 2 ;;
         --uninstall)    UNINSTALL="true"; shift ;;
@@ -97,6 +100,7 @@ write_env() {
 # 由 deploy/linux/install.sh 生成 $(date -Iseconds)
 CLOAKMESH_HOST=$host
 CLOAKMESH_ROUTER_NAME=$ROUTER_NAME
+CLOAKMESH_ROUTER_PORT=$ROUTER_PORT
 CLOAKMESH_PWD=$pwd
 CLOAKMESH_CONSOLE_PORT=$CONSOLE_PORT
 EOF
@@ -216,7 +220,7 @@ main() {
 
 ================ CloakMesh 部署完成 ================
  控制器 API : https://${host}:1280
- 边缘路由器 : ${ROUTER_NAME}（tcp://${host}:3022，容器状态：${router_status}）
+ 边缘路由器 : ${ROUTER_NAME}（tcp://${host}:${ROUTER_PORT}，容器状态：${router_status}）
  管理员用户 : ${CLOAKMESH_USER:-admin}
  管理员密码 : ${pwd}
 $( [ -n "$CONSOLE_DIR" ] && printf ' 中文控制台 : http://<本机IP>:%s （登录时填 https://%s:1280）\n' "$CONSOLE_PORT" "$host" )

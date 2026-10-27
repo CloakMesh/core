@@ -58,14 +58,14 @@ services:
       controller:
         condition: service_healthy
     ports:
-      - "3022:3022"
+      - "${CLOAKMESH_ROUTER_PORT:-3022}:${CLOAKMESH_ROUTER_PORT:-3022}"
     environment:
       CLOAKMESH_HOME: /cloakmesh-router
       CLOAKMESH_CTRL_ADVERTISED_ADDRESS: ${CLOAKMESH_HOST:-cloakmesh-controller}
       CLOAKMESH_CTRL_ADVERTISED_PORT: "1280"
       CLOAKMESH_ROUTER_NAME: ${CLOAKMESH_ROUTER_NAME:-router-1}
       CLOAKMESH_ROUTER_TYPE: edge
-      CLOAKMESH_ROUTER_PORT: "3022"
+      CLOAKMESH_ROUTER_PORT: "${CLOAKMESH_ROUTER_PORT:-3022}"
       # 必须是单层默认值：compose 对嵌套 ${A:-${B}} 解析不可靠，会导致变量丢失
       CLOAKMESH_ROUTER_ADVERTISED_ADDRESS: ${CLOAKMESH_HOST:-cloakmesh-controller}
       CLOAKMESH_BOOTSTRAP: "true"
