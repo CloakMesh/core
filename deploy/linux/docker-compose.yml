@@ -24,7 +24,14 @@ services:
       CLOAKMESH_CTRL_ADVERTISED_ADDRESS: ${CLOAKMESH_HOST:-cloakmesh-controller}
       CLOAKMESH_CTRL_ADVERTISED_PORT: "1280"
       CLOAKMESH_BOOTSTRAP: "true"
+      # 注意：此项在上游语义里决定「是否生成 root+intermediate PKI」，
+      # 首个控制器必须为 true（不是 HA 集群成员开关；HA 成员用 CLUSTER_NODE_PKI）
+      CLOAKMESH_BOOTSTRAP_CLUSTER: "true"
+      CLOAKMESH_CLUSTER_TRUST_DOMAIN: ${CLOAKMESH_TRUST_DOMAIN:-cloakmesh}
+      CLOAKMESH_CLUSTER_NODE_NAME: ${CLOAKMESH_CLUSTER_NODE_NAME:-controller-1}
       CLOAKMESH_BOOTSTRAP_PKI: "true"
+      # 控制台由独立容器提供，控制器内不再内嵌 ZAC 静态资源
+      CLOAKMESH_BOOTSTRAP_CONSOLE: "false"
       CLOAKMESH_BOOTSTRAP_CONFIG: "true"
       CLOAKMESH_BOOTSTRAP_DATABASE: "true"
       CLOAKMESH_AUTO_RENEW_CERTS: "true"
@@ -59,12 +66,15 @@ services:
       CLOAKMESH_ROUTER_NAME: ${CLOAKMESH_ROUTER_NAME:-router-1}
       CLOAKMESH_ROUTER_TYPE: edge
       CLOAKMESH_ROUTER_PORT: "3022"
-      CLOAKMESH_ROUTER_ADVERTISED_ADDRESS: ${CLOAKMESH_ROUTER_HOST:-${CLOAKMESH_HOST:-cloakmesh-controller}}
+      # 必须是单层默认值：compose 对嵌套 ${A:-${B}} 解析不可靠，会导致变量丢失
+      CLOAKMESH_ROUTER_ADVERTISED_ADDRESS: ${CLOAKMESH_HOST:-cloakmesh-controller}
       CLOAKMESH_BOOTSTRAP: "true"
       CLOAKMESH_BOOTSTRAP_CONFIG: "true"
       CLOAKMESH_BOOTSTRAP_ENROLLMENT: "true"
       CLOAKMESH_AUTO_RENEW_CERTS: "true"
       CLOAKMESH_PWD: ${CLOAKMESH_PWD:?CLOAKMESH_PWD 未设置}
+      # 由 install.sh 自动签发后写入 .env；也可手工指定
+      CLOAKMESH_ENROLL_TOKEN: ${CLOAKMESH_ENROLL_TOKEN:-}
     volumes:
       - router-data:/cloakmesh-router
 

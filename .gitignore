@@ -49,3 +49,7 @@ simple-transfer-*/
 etc/endpoints
 etc/endpoints.yml
 .fablab-instance
+
+# 部署产物（勿入库：含管理员密码与生成的静态资源）
+deploy/linux/.env
+deploy/linux/console-dist/

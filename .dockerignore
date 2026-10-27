@@ -1,1 +1,6 @@
-/.git/
+# 构建上下文裁剪：只排除构建产物与 VCS 元数据
+# 注意：dist/dist-packages/ 是上游 git 跟踪的源码（bootstrap/entrypoint 脚本），不能排除
+.git
+.git/**
+dist/bin
+**/*_test.go.bak
