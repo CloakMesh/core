@@ -9,8 +9,10 @@
 |---|---|---|---|---|
 | `CLOAKMESH_CTRL_PORT` | `1280` | 控制器 API（控制面） | HTTPS / REST（`/edge/client/v1`、`/edge/management/v1`...） | 所有客户端、ZAC、CLI、管理员 |
 | `CLOAKMESH_ROUTER_PORT` | `3022` | 边缘路由器 edge listener（数据面） | Ziti channel 协议 over TLS（非 HTTP） | 所有客户端（业务流量） |
-| `CLOAKMESH_CONSOLE_PORT` | `8080` | 中文控制台（nginx） | HTTP(S) 静态站点 | 管理员浏览器 |
+| `CLOAKMESH_CONSOLE_PORT` | `8080` | 中文控制台（ZAC node 服务，容器内 1408） | HTTP(S) | 管理员浏览器 |
 | （固定）`10080` | `10080` | 路由器 link listener | 同上私有协议 | 仅多路由器互联，单路由器不需要 |
+
+> 控制台跑的是 ZAC 自带的 `server.js`（不是 nginx 静态托管）：SPA 与控制器 API 同源、令牌存 httpOnly cookie，登录与设置持久化才可用。
 
 **一句话记住**：改客户端能不能连，看 1280 + 3022；改管理员能不能看，看 8080；10080 只跟路由器之间的 mesh 有关。
 
