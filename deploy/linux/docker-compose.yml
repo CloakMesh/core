@@ -79,19 +79,33 @@ services:
       - router-data:/cloakmesh-router
 
   console:
-    image: ${CLOAKMESH_CONSOLE_IMAGE:-cloakmesh/console:local}
+    # 用 ZAC 自带的 node 服务（server.js）而不是 nginx 静态托管：
+    # 它把 SPA 与控制器 API 放在同一 origin，用 httpOnly cookie 保存令牌，
+    # 登录、设置持久化、控制器管理、外部 IdP 登录才完整可用。
+    image: ${CLOAKMESH_CONSOLE_IMAGE:-cloakmesh/console:server}
+    build:
+      context: ../../../cloakmesh-console
+      dockerfile: docker-images/cloakmesh-console/Dockerfile.server
     container_name: cloakmesh-console
     restart: unless-stopped
     depends_on:
       controller:
         condition: service_healthy
     ports:
-      - "${CLOAKMESH_CONSOLE_PORT:-8080}:80"
+      - "${CLOAKMESH_CONSOLE_PORT:-8080}:1408"
+    environment:
+      PORT: "1408"
+      # 控制器地址（server.js 会把它作为上游，并做 API 反代）
+      CLOAKMESH_CONTROLLER_URLS: https://${CLOAKMESH_HOST}:${CLOAKMESH_CTRL_PORT:-1280}
+      # 控制器用自签证书、控制台走 http，因此关闭校验与 Secure Cookie
+      CLOAKMESH_REJECT_UNAUTHORIZED: "false"
+      CLOAKMESH_COOKIE_SECURE: "false"
     volumes:
-      - ${CLOAKMESH_CONSOLE_DIST:-./console-dist}:/usr/share/nginx/html:ro
+      - console-sessions:/usr/src/app/sessions
     profiles:
       - console
 
 volumes:
   controller-data:
   router-data:
+  console-sessions:
