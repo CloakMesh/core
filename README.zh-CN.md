@@ -16,7 +16,7 @@ CloakMesh 是基于 [OpenZiti](https://github.com/openziti/ziti) 构建的零信
 
 ## 快速开始（Linux 一键部署）
 
-> 国内网络可用 Gitee 镜像：`https://gitee.com/cloakmash/core.git`
+> 国内网络可用 Gitee 镜像：`https://gitee.com/cloakmesh/core.git`
 
 前置：Docker Engine + `docker compose` v2。
 
