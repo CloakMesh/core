@@ -11,7 +11,6 @@ CloakMesh 是基于 [OpenZiti](https://github.com/openziti/ziti) 构建的零信
 | `cloakmesh-core` | 控制器 + 路由器（本仓库） |
 | `cloakmesh-console` | 管理控制台（ZAC 中文汉化版） |
 | `cloakmesh-desktop-edge-win` | Windows 桌面客户端（中文汉化版） |
-| `cloakmesh-tunnel-apple` | Apple 客户端（macOS / iOS） |
 | `cloakmesh-tunnel-android` | Android 客户端 |
 | `cloakmesh-tunnel-sdk-c` | 隧道引擎（`cloakmesh-tunnel`） |
 
