@@ -69,7 +69,7 @@ ENV CLOAKMESH_HOME=/cloakmesh-router \
 
 LABEL org.opencontainers.image.title="CloakMesh Router" \
       org.opencontainers.image.description="CloakMesh zero-trust edge router (based on OpenZiti, Apache-2.0)" \
-      org.opencontainers.image.source="https://github.com/aiuc-labs/cloakmesh-core" \
+      org.opencontainers.image.source="https://github.com/cloakmesh/core" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 WORKDIR /cloakmesh-router

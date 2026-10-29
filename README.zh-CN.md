@@ -17,19 +17,19 @@ CloakMesh 是基于 [OpenZiti](https://github.com/openziti/ziti) 构建的零信
 
 ## 快速开始（Linux 一键部署）
 
-> 国内网络可用 Gitee 镜像：`https://gitee.com/aiuc-labs/cloakmesh-core.git`
+> 国内网络可用 Gitee 镜像：`https://gitee.com/cloakmesh/core.git`
 
 前置：Docker Engine + `docker compose` v2。
 
 ```bash
-git clone https://github.com/aiuc-labs/cloakmesh-core.git
+git clone https://github.com/cloakmesh/core.git
 cd cloakmesh-core
 
 # 控制器 + 边缘路由器
 ./deploy/linux/install.sh
 
 # 同时部署中文控制台
-git clone https://github.com/aiuc-labs/cloakmesh-console.git ../cloakmesh-console
+git clone https://github.com/cloakmesh/console.git ../cloakmesh-console
 ./deploy/linux/install.sh --console ../cloakmesh-console
 
 # 自定义端口（控制面 / 数据面 / 控制台）
